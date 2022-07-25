@@ -34,7 +34,7 @@ class DataUtilsSpec extends munit.FunSuite with TestContainerForAll {
         spark,
         csvDataPath = "tasks/t6_1_spark/src/test/resources/test_employee.csv",
         csvOptions = Map("header" -> "true", "nullValue" -> "null"),
-        esResource = "employee",
+        esResource = resourceName,
         esConfig = Map("es.mapping.id" -> "upn", "es.nodes" -> host, "es.port" -> port),
         transform = _.withColumn("managers", split(col("managers"), "\\|"))
       )
