@@ -1,4 +1,4 @@
-package io.github.artkostm.csv
+package io.github.artkostm.data.csv
 
 import cats.data.NonEmptyList
 import io.github.artkostm.schema.{FSchema, SchemaF}

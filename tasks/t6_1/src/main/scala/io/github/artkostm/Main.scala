@@ -9,7 +9,8 @@ import cats.effect.{Async, ExitCode, IO, IOApp, Resource}
 import cats.syntax.all.*
 import com.sksamuel.elastic4s.cats.effect.instances.given
 import io.github.artkostm.Cli.CliParams
-import io.github.artkostm.csv.Csv
+import io.github.artkostm.data.DataProvider
+import io.github.artkostm.data.csv.Csv
 import io.github.artkostm.es.ClientConfig
 import io.github.artkostm.utils.Config
 import io.github.artkostm.es.Client
@@ -26,11 +27,11 @@ object Main extends IOApp:
         exit             <- Client.java[IO](c.client).use {
                               client =>
                                 for
-                                  given Csv[IO]     <- Csv.make[IO]
-                                  given Client[IO]   = client
-                                  given Indexer[IO] <- Indexer.make[IO]()
-                                  app               <- Application.make[IO]
-                                  _                 <- app.run(c)
+                                  given DataProvider[IO] <- DataProvider.csv[IO](c.file, true)
+                                  given Client[IO]       = client
+                                  given Indexer[IO]      <- Indexer.make[IO]()
+                                  app                    <- Application.make[IO]
+                                  _                      <- app.run(c)
                                 yield ExitCode.Success //todo fold the final effect and convert the result into exit code
                             }
       yield exit
