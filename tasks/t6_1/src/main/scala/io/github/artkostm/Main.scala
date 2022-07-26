@@ -12,7 +12,6 @@ import io.github.artkostm.Cli.CliParams
 import io.github.artkostm.data.DataProvider
 import io.github.artkostm.data.csv.Csv
 import io.github.artkostm.es.ClientConfig
-import io.github.artkostm.utils.Config
 import io.github.artkostm.es.Client
 import io.github.artkostm.index.Indexer
 

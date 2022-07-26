@@ -10,7 +10,10 @@ trait DataProvider[F[_]]:
   def read(): F[fs2.Stream[F, Map[String, String]]]
 
 object DataProvider:
-  inline def apply[F[_]]: DataProvider[F] = summon
-  
-  def csv[F[_]: Logger: Files: RaiseThrowable: Async](filePath: String, includeLineNumber: Boolean = false): F[DataProvider[F]] =
+  inline def apply[F[_]: DataProvider]: DataProvider[F] = summon
+
+  def csv[F[_]: Logger: Files: RaiseThrowable: Async](
+      filePath: String,
+      includeLineNumber: Boolean = false
+  ): F[DataProvider[F]] =
     Csv.make(filePath, includeLineNumber)

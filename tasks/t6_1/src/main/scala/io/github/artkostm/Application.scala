@@ -17,13 +17,12 @@ object Application:
       new Application[F]:
         override def run(params: CliParams): F[Unit] =
           for
-            _                <- Logger[F].info(s"Starting indexing app with the following params: $params")
-            dataStream       <- DataProvider[F].read()
-            indexName         = params.index.getOrElse(utils.getFileName(params.file))
-            _                <- Client[F].create(indexName)
-            stats            <- Indexer[F].indexData(indexName, dataStream, params.id)
-            (indexed, errors) = stats
-            _                <- Logger[F].info(s"Indexing completed.")
-            _                <- Logger[F].info(s"Successfully indexed $indexed rows. Errors: $errors")
+            _                 <- Logger[F].info(s"Starting indexing app with the following params: $params")
+            dataStream        <- DataProvider[F].read()
+            indexName          = params.index.getOrElse(utils.getFileName(params.file))
+            _                 <- Client[F].create(indexName)
+            (indexed, errors) <- Indexer[F].indexData(indexName, dataStream, params.id)
+            _                 <- Logger[F].info(s"Indexing completed.")
+            _                 <- Logger[F].info(s"Successfully indexed $indexed rows. Errors: $errors")
           yield ()
     )

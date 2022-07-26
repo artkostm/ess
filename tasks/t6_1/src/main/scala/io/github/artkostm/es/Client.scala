@@ -27,34 +27,37 @@ object Client:
   inline def apply[F[_]: Client]: Client[F] = summon
 
   def java[F[_]: Executor: Functor: Logger: Async](config: ClientConfig): Resource[F, Client[F]] =
-    Resource.fromAutoCloseable[F, ElasticClient](Async[F].pure(ElasticClient(createJavaClient(config)))).map { es =>
-      new Client[F]:
-        override def create(index: String): F[Unit] =
-          for
-            _ <- Logger[F].info(s"Checking the $index index.")
-            r <- es.execute[GetIndexRequest, Map[String, GetIndexResponse], F](getIndex(index)).flatMap(checkResponse)
-            _ <- if r.status == 404 then
-              for
-                _ <- es.execute[CreateIndexRequest, CreateIndexResponse, F](
-                  createIndex(index).shards(1).replicas(0)
-                ).flatMap(checkResponse)
-                _ <- Logger[F].info(s"Index $index created.")
-              yield ()
-            else Logger[F].info("Index exists.")
-          yield ()
-
-        override def indexBulk(index: String, batch: Seq[Map[String, String]], id: Option[String])
-            : F[(Int, Int)] =
-          for
-            r <- es.execute[BulkRequest, BulkResponse, F](
-                   id.fold(bulk(batch.map { fields => indexInto(index).fields(fields.toSeq*) })) { idCol =>
-                     bulk(batch.map { fields => indexInto(index).id(fields(idCol)).fields(fields.toSeq*) })
-                   }.refresh(RefreshPolicy.WaitFor)
-                 )
-            response <- checkResponse[F, BulkResponse](r)
-            result = response.result
-          yield (result.successes.size, result.failures.size)
+    Resource.fromAutoCloseable[F, ElasticClient](ElasticClient(createJavaClient(config)).pure[F]).map { es =>
+      makeClient(es)
     }
+
+  private def makeClient[F[_]: Executor: Functor: Logger: Async](es: ElasticClient): Client[F] =
+    new Client[F]:
+      override def create(index: String): F[Unit] =
+        for
+          _ <- Logger[F].info(s"Checking the $index index.")
+          r <- es.execute[GetIndexRequest, Map[String, GetIndexResponse], F](getIndex(index)).flatMap(checkResponse)
+          _ <- if r.status == 404 then
+            for
+              _ <- es.execute[CreateIndexRequest, CreateIndexResponse, F](
+                createIndex(index).shards(1).replicas(0)
+              ).flatMap(checkResponse)
+              _ <- Logger[F].info(s"Index $index created.")
+            yield ()
+          else Logger[F].info("Index exists.")
+        yield ()
+
+      override def indexBulk(index: String, batch: Seq[Map[String, String]], id: Option[String])
+      : F[(Int, Int)] =
+        for
+          r <- es.execute[BulkRequest, BulkResponse, F](
+            id.fold(bulk(batch.map { fields => indexInto(index).fields(fields.toSeq*) })) { idCol =>
+              bulk(batch.map { fields => indexInto(index).id(fields(idCol)).fields(fields.toSeq*) })
+            }.refresh(RefreshPolicy.WaitFor)
+          )
+          response <- checkResponse[F, BulkResponse](r)
+          result = response.result
+        yield (result.successes.size, result.failures.size)
 
   private def createJavaClient(config: ClientConfig): JavaClient =
     JavaClient(
