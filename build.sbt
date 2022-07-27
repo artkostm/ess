@@ -43,12 +43,10 @@ lazy val t6_1 = (project in file("tasks/t6_1"))
       .cross(CrossVersion.for3Use2_13),
     libraryDependencies += ("com.sksamuel.elastic4s" % "elastic4s-client-esjava" % esClientVersion)
       .cross(CrossVersion.for3Use2_13),
-//    libraryDependencies += "com.github.pureconfig" %% "pureconfig-core" % "0.17.1",
     libraryDependencies += "org.gnieh" %% "fs2-data-csv" % fs2CsvVersion,
     libraryDependencies += "co.fs2" %% "fs2-io" % fs2IoVersion,
     libraryDependencies += "io.higherkindness" %% "droste-core" % drosteVersion,
   )
-  .settings(generateBoilerplate: _*)
   .settings(scalacOptions ++= Seq(
     "-source:future"
   ))
@@ -75,7 +73,3 @@ lazy val schema = (project in file("modules/schema"))
     libraryDependencies += "org.typelevel" %% "cats-mtl" % catsMtlVersion,
     libraryDependencies += "io.higherkindness" %% "droste-core" % drosteVersion,
   )
-
-val generateBoilerplate = Seq(
-  Compile / sourceGenerators += Def.task { Boilerplate.gen((Compile / sourceManaged).value) }
-)
