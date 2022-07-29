@@ -1,0 +1,6 @@
+GET /custom_belarusian/_analyze
+{
+    "analyzer": "my_belarusian",
+    "field": "field1",
+    "text": "<div>Прывiтанне, <b>XXI</b>-ае стагоддзе, як справы?<div/>"
+}
