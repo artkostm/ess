@@ -36,8 +36,7 @@ public final class Utils {
 
     static boolean isRoman(CharSequence string) {
         final Pattern p = Pattern.compile(DEFAULT_ROMAN_VALIDATION_PATTERN);
-        final Matcher m = p.matcher(string);
-        return m.matches();
+        return isRoman(string, p);
     }
 
     public static final String DEFAULT_ROMAN_VALIDATION_PATTERN = "^M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$";
