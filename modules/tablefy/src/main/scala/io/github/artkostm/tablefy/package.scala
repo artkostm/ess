@@ -1,6 +1,5 @@
 package io.github.artkostm
 
-import cats.Show
 import cats.syntax.monoid.*
 
 package object tablefy:
@@ -20,9 +19,6 @@ package object tablefy:
       val nrows = rows.size
       val vsep = vcat(left, ("+" + ("|+" * nrows)).map(char).toList)
       vsep |+| hcat(top, columns.map(fmtColumn).intersperse(vsep)) |+| vsep
-
-  given Show[Box] with
-    override def show(t: Box): String = render(t)
 
   extension[A] (l: List[A])
     def intersperse[B >: A](sep: B): List[B] =
