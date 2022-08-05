@@ -1,8 +1,14 @@
 ## Task 7.1
 
+### Development
+
+1. Use nix and enter the shell (`nix develop` if you have flake support, `nix-shell` otherwise), or make sure you have sbt on the PATH
+2. Run sbt - after it loads, type `project t7_1` then type `run <cli params>`
+3. Enjoy
+
 ### Results
 
-1. Build the plugin distribution artefact `mvn clean package`
+1. Build the plugin distribution artefact `universal:packageZipTarball` (can be found under the `target/universal` folder)
 2. Copy the archive to your Elasticsearch docker container `docker cp roman2arabic-1.0.zip elk:/roman2arabic-1.0.zip`
 3. Install plugin
 ```bash
