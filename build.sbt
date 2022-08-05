@@ -54,7 +54,7 @@ lazy val t6_1 = (project in file("tasks/t6_1"))
   .settings(scalacOptions ++= Seq(
     "-source:future"
   ))
-  .dependsOn(schema)
+  .dependsOn(schema, tablefy)
 
 lazy val t6_1_spark = (project in file("tasks/t6_1_spark"))
   .settings(

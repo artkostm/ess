@@ -29,7 +29,7 @@ object Box:
       hcat(Alignment.top, List(x, y))
 
   given Monoid[Box] with
-    override def empty: Box                   = nil
+    override def empty: Box = nil
     override def combine(x: Box, y: Box): Box =
       hcat(Alignment.top, List(x, y))
 
