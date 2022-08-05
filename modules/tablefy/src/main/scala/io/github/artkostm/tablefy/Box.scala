@@ -131,7 +131,7 @@ object Box:
   private def resizeBox(using PLS: Padable[List[String]], PS: Padable[String])(r: Int, c: Int): List[String] => List[String] =
     s => PLS.takeP(blanks(c).asInstanceOf[PLS.C], r, s.map(PS.takeP(' '.asInstanceOf[PS.C], c, _)))
 
-  // It is like 'takeP', but with alignment.  That is, we imagine a copy of @xs@ extended infinitely on both sides with
+  // It is like Padable' 'takeP', but with alignment.  That is, we imagine a copy of @xs@ extended infinitely on both sides with
   // copies of @a@, and a window of size @n@ placed so that @xs@ has the specified alignment within the window; @takePA algn a n xs@
   // returns the contents of this window.
   private def takePA[A](using M: Monoid[A], P: Padable[A]): Alignment => P.C => Int => A => A =
@@ -159,7 +159,7 @@ object Box:
       glue.tupled(res)
 
   // Resize a rendered list of lines, using given alignments.
-  protected[Box] def resizeBoxAligned: Int => Int => Alignment => Alignment => List[String] => List[String] =
+  private def resizeBoxAligned: Int => Int => Alignment => Alignment => List[String] => List[String] =
     r => c => ha => va => l =>
       takePA[List[String]](va)(blanks(c))(r)(l.map(s => takePA[String](ha)(' ')(c)(s)))
 

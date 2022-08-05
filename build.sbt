@@ -17,6 +17,7 @@ val fs2CsvVersion = "1.4.1"
 val fs2IoVersion = "3.2.10"
 val sparkVersion = "3.3.0"
 val drosteVersion = "0.9.0"
+val circeVersion = "0.14.1"
 
 
 lazy val root = (project in file("."))
@@ -50,9 +51,15 @@ lazy val t6_1 = (project in file("tasks/t6_1"))
     libraryDependencies += "org.gnieh" %% "fs2-data-csv" % fs2CsvVersion,
     libraryDependencies += "co.fs2" %% "fs2-io" % fs2IoVersion,
     libraryDependencies += "io.higherkindness" %% "droste-core" % drosteVersion,
+    libraryDependencies ++= Seq(
+      "io.circe" %% "circe-core",
+      "io.circe" %% "circe-generic",
+      "io.circe" %% "circe-parser"
+    ).map(_ % circeVersion)
   )
   .settings(scalacOptions ++= Seq(
-    "-source:future"
+    "-source:future",
+    "-Xmax-inlines", "120"
   ))
   .dependsOn(schema, tablefy)
 
@@ -97,9 +104,5 @@ lazy val schema = (project in file("modules/schema"))
 lazy val tablefy = (project in file("modules/tablefy"))
   .settings(
     libraryDependencies += "org.typelevel" %% "cats-core" % catsVersion,
-    libraryDependencies += "org.typelevel" %% "cats-free" % catsVersion,
     libraryDependencies += "org.typelevel" %% "cats-effect" % catsEffectVersion,
-    libraryDependencies += "org.typelevel" %% "cats-mtl" % catsMtlVersion,
-    libraryDependencies += "io.higherkindness" %% "droste-core" % drosteVersion,
-    //libraryDependencies += ("org.scala-lang.modules" %% "scala-collection-contrib" % "0.2.2").cross(CrossVersion.for3Use2_13)
   )
