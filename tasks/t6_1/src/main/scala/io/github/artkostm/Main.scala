@@ -8,12 +8,13 @@ import io.github.vigoo.clipp.catseffect3.*
 import cats.effect.{Async, ExitCode, IO, IOApp, Resource}
 import cats.syntax.all.*
 import com.sksamuel.elastic4s.cats.effect.instances.given
-import io.github.artkostm.Cli.CliParams
+import io.github.artkostm.Cli.{CliParams, SearchParams, TransportParams}
 import io.github.artkostm.data.DataProvider
 import io.github.artkostm.data.csv.Csv
 import io.github.artkostm.es.ClientConfig
 import io.github.artkostm.es.Client
 import io.github.artkostm.index.Indexer
+import io.github.artkostm.search.SearchSampler
 
 object Main extends IOApp:
   override def run(args: List[String]): IO[ExitCode] =
@@ -23,15 +24,17 @@ object Main extends IOApp:
         given Filter      = Filter.atLeastLevel(LogLevel.valueOf(c.level))
         given Printer     = ColorPrinter()
         given Logger[IO] <- DefaultLogger.makeIo(Output.fromConsole)
-        exit             <- Client.java[IO](c.client).use {
-                              client =>
-                                for
-                                  given DataProvider[IO] <- DataProvider.csv[IO](c.file, true)
-                                  given Client[IO]       = client
-                                  given Indexer[IO]      <- Indexer.make[IO]()
-                                  app                    <- Application.make[IO]
-                                  _                      <- app.run(c)
-                                yield ExitCode.Success //todo fold the final effect and convert the result into exit code
+        exit             <- Client.java[IO](c.client).use { client =>
+                              for
+                                given DataProvider[IO]  <- DataProvider.csv[IO](c.file, true)
+                                given Client[IO]        = client
+                                given Indexer[IO]       <- Indexer.make[IO]()
+                                given SearchSampler[IO] <- SearchSampler.make[IO]()
+                                app                     <- Application.make[IO]
+                                _                       <- c match
+                                                            case t: TransportParams => app.run(t)
+                                                            case s: SearchParams    => app.search(s)
+                              yield ExitCode.Success // todo fold the final effect and convert the result into exit code
                             }
       yield exit
     }
@@ -39,16 +42,28 @@ object Main extends IOApp:
 object Cli:
   // todo add more params for csv formatting, credentials,, schema/mapping definitions
   // todo add params validation
-  final case class CliParams(
+  sealed trait CliParams:
+    val client: ClientConfig
+    val file: String
+    val index: Option[String]
+    val level: String
+  final case class TransportParams(
       file: String,
       client: ClientConfig,
       index: Option[String],
       id: Option[String],
       schema: Option[String],
       level: String
-  )
+  ) extends CliParams
 
-  val program: Parameter.Spec[CliParams] = for
+  final case class SearchParams(
+      file: String,
+      client: ClientConfig,
+      index: Option[String],
+      level: String
+  ) extends CliParams
+
+  val dataTransportProgram: Parameter.Spec[CliParams] = for
     filePath <- namedParameter[String]("Csv file", "some/file/path.csv", 'f', "file")
     url      <- namedParameter[String]("ES url", "http://localhost:9200", 'u', "url")
     index    <- optional[String](namedParameter[String]("ES index name", "index-name", 'i', "index"))
@@ -57,4 +72,25 @@ object Cli:
                   namedParameter[String]("Comma-separated list of data types", "String,Int,Float", 's', "schema")
                 ) // todo use recursion schemes
     level    <- optional[String](namedParameter[String]("Log level", "Info", 'l', "level"))
-  yield CliParams(filePath, ClientConfig(url, None, None), index, id, schema, level.getOrElse(LogLevel.Info.toString))
+  yield TransportParams(
+    filePath,
+    ClientConfig(url, None, None),
+    index,
+    id,
+    schema,
+    level.getOrElse(LogLevel.Info.toString)
+  )
+
+  val searchProgram: Parameter.Spec[CliParams] = for
+    filePath <- namedParameter[String]("Csv file", "some/file/path.csv", 'f', "file")
+    url      <- namedParameter[String]("ES url", "http://localhost:9200", 'u', "url")
+    index    <- optional[String](namedParameter[String]("ES index name", "index-name", 'i', "index"))
+    level    <- optional[String](namedParameter[String]("Log level", "Info", 'l', "level"))
+  yield SearchParams(filePath, ClientConfig(url, None, None), index, level.getOrElse(LogLevel.Info.toString))
+
+  val program: Parameter.Spec[CliParams] = for
+    commandName <- command("transport", "search")
+    cmd         <- commandName match
+                     case "transport" => dataTransportProgram
+                     case "search"    => searchProgram
+  yield cmd

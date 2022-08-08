@@ -12,6 +12,7 @@ import com.sksamuel.elastic4s.http.{JavaClient, NoOpHttpClientConfigCallback}
 import com.sksamuel.elastic4s.requests.bulk.{BulkRequest, BulkResponse}
 import com.sksamuel.elastic4s.requests.common.RefreshPolicy
 import com.sksamuel.elastic4s.requests.indexes.{CreateIndexRequest, CreateIndexResponse, GetIndexRequest}
+import com.sksamuel.elastic4s.requests.searches.SearchRequest as EsSearchRequest
 import org.apache.http.auth.{AuthScope, UsernamePasswordCredentials}
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.client.BasicCredentialsProvider
@@ -22,6 +23,7 @@ import org.legogroup.woof.{*, given}
 trait Client[F[_]]:
   def create(index: String): F[Unit]
   def indexBulk(index: String, batch: Seq[Map[String, String]], id: Option[String]): F[(Int, Int)]
+  def search(request: model.SearchRequest): F[List[Map[String, String]]]
 
 object Client:
   inline def apply[F[_]: Client]: Client[F] = summon
@@ -31,7 +33,7 @@ object Client:
       makeClient(es)
     }
 
-  private def makeClient[F[_]: Executor: Functor: Logger: Async](es: ElasticClient): Client[F] =
+  def makeClient[F[_]: Executor: Functor: Logger: Async](es: ElasticClient): Client[F] =
     new Client[F]:
       override def create(index: String): F[Unit] =
         for
@@ -58,6 +60,22 @@ object Client:
           response <- checkResponse[F, BulkResponse](r)
           result = response.result
         yield (result.successes.size, result.failures.size)
+
+      override def search(request: model.SearchRequest): F[List[Map[String, String]]] =
+        for
+          r <- es.execute(
+            summon[Conversion[model.SearchRequest, EsSearchRequest]](request)
+          )
+          response <- checkResponse(r)
+          result   = response.result
+          _        <- Logger[F].info(s"Got ${result.hits.total} hits.")
+        yield result.hits.hits.map { h =>
+          Map(
+            "_index" -> String.valueOf(h.index),
+            "_id"    -> String.valueOf(h.id),
+            "_score" -> String.valueOf(h.score)
+          ) ++ h.sourceAsMap.mapValues(String.valueOf)
+        }.toList
 
   private def createJavaClient(config: ClientConfig): JavaClient =
     JavaClient(

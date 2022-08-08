@@ -129,12 +129,12 @@ object Box:
 
   // Resize a rendered list of lines.
   private def resizeBox(using PLS: Padable[List[String]], PS: Padable[String])(r: Int, c: Int): List[String] => List[String] =
-    s => PLS.takeP(blanks(c).asInstanceOf[PLS.C], r, s.map(PS.takeP(' '.asInstanceOf[PS.C], c, _)))
+    s => PLS.takeP(blanks(c).asInstanceOf[PLS.Filler], r, s.map(PS.takeP(' '.asInstanceOf[PS.Filler], c, _)))
 
   // It is like Padable' 'takeP', but with alignment.  That is, we imagine a copy of @xs@ extended infinitely on both sides with
   // copies of @a@, and a window of size @n@ placed so that @xs@ has the specified alignment within the window; @takePA algn a n xs@
   // returns the contents of this window.
-  private def takePA[A](using M: Monoid[A], P: Padable[A]): Alignment => P.C => Int => A => A =
+  private def takePA[A](using M: Monoid[A], P: Padable[A]): Alignment => P.Filler => Int => A => A =
     c => b => n0 => l =>
       val numRev: (Alignment, Int) => Int =
         case (Alignment.AlignFirst, _)   => 0
