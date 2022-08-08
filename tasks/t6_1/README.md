@@ -11,7 +11,7 @@
 
 To run the program please go through the Development list above and run this command:
 ```bash
-run -f "tasks/t6_1_spark/src/test/resources/test_employee.csv" -u "http://localhost:9200" -i employee_v1 -d upn
+run transport -f "tasks/t6_1_spark/src/test/resources/test_employee.csv" -u "http://localhost:9200" -i employee_v1 -d upn
 ```
 or publish the jar file and run it just like regular java program (<small>todo - add the Native Packager plugin</small>)
 
@@ -35,7 +35,7 @@ And as a data engineer, I just had to play around with the Spark <-> ES integrat
 
 To run the program please go through the Development list above and run this command:
 ```bash
-run -f "/path/to/test_request.json" -u "http://localhost:9200"
+run search -f "/path/to/test_request.json" -u "http://localhost:9200"
 ```
 After executing the program, you will see the following console output:
 ![out](pics/8.1.out.png)
