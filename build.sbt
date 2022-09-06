@@ -19,49 +19,53 @@ val sparkVersion = "3.3.0"
 val drosteVersion = "0.9.0"
 val circeVersion = "0.14.1"
 
+lazy val commonSettings = Seq(
+  libraryDependencies += "org.typelevel" %% "cats-core" % catsVersion,
+  libraryDependencies += "org.typelevel" %% "cats-free" % catsVersion,
+  libraryDependencies += "org.typelevel" %% "cats-effect" % catsEffectVersion,
+  libraryDependencies += "org.typelevel" %% "cats-mtl" % catsMtlVersion,
+  libraryDependencies += "io.github.vigoo" %% "clipp-cats-effect3" % clippVersion,
+  libraryDependencies += "org.legogroup" %% "woof-core" % woofVersion,
+  libraryDependencies += ("com.sksamuel.elastic4s" %% "elastic4s-core" % esClientVersion)
+    .exclude("org.typelevel", "cats-effect-std_2.13")
+    .exclude("org.typelevel", "cats-effect_2.13")
+    .exclude("org.typelevel", "cats-kernel_2.13")
+    .exclude("org.typelevel", "cats-effect-kernel_2.13")
+    .exclude("org.typelevel", "cats-core_2.13")
+    .cross(CrossVersion.for3Use2_13),
+  libraryDependencies += ("com.sksamuel.elastic4s" %% "elastic4s-effect-cats" % esClientVersion)
+    .exclude("org.typelevel", "cats-effect-std_2.13")
+    .exclude("org.typelevel", "cats-effect_2.13")
+    .exclude("org.typelevel", "cats-kernel_2.13")
+    .exclude("org.typelevel", "cats-effect-kernel_2.13")
+    .exclude("org.typelevel", "cats-core_2.13")
+    .cross(CrossVersion.for3Use2_13),
+  libraryDependencies += ("com.sksamuel.elastic4s" % "elastic4s-client-esjava" % esClientVersion)
+    .cross(CrossVersion.for3Use2_13),
+  libraryDependencies += "org.gnieh" %% "fs2-data-csv" % fs2CsvVersion,
+  libraryDependencies += "co.fs2" %% "fs2-io" % fs2IoVersion,
+  libraryDependencies += "io.higherkindness" %% "droste-core" % drosteVersion,
+  libraryDependencies ++= Seq(
+    "io.circe" %% "circe-core",
+    "io.circe" %% "circe-generic",
+    "io.circe" %% "circe-parser"
+  ).map(_ % circeVersion),
+  scalacOptions ++= Seq(
+    "-source:future",
+    "-Xmax-inlines", "120"
+  )
+)
+
 
 lazy val root = (project in file("."))
-  .aggregate(schema, t6_1, t6_1_spark, t7_1, tablefy)
+  .aggregate(schema, tablefy, common, t6_1, t6_1_spark, t7_1, t11_1, t11_1_spark)
 
 lazy val t6_1 = (project in file("tasks/t6_1"))
   .settings(
     name := "t6_1",
-    libraryDependencies += "org.typelevel" %% "cats-core" % catsVersion,
-    libraryDependencies += "org.typelevel" %% "cats-free" % catsVersion,
-    libraryDependencies += "org.typelevel" %% "cats-effect" % catsEffectVersion,
-    libraryDependencies += "org.typelevel" %% "cats-mtl" % catsMtlVersion,
-    libraryDependencies += "io.github.vigoo" %% "clipp-cats-effect3" % clippVersion,
-    libraryDependencies += "org.legogroup" %% "woof-core" % woofVersion,
-    libraryDependencies += ("com.sksamuel.elastic4s" %% "elastic4s-core" % esClientVersion)
-      .exclude("org.typelevel", "cats-effect-std_2.13")
-      .exclude("org.typelevel", "cats-effect_2.13")
-      .exclude("org.typelevel", "cats-kernel_2.13")
-      .exclude("org.typelevel", "cats-effect-kernel_2.13")
-      .exclude("org.typelevel", "cats-core_2.13")
-      .cross(CrossVersion.for3Use2_13),
-    libraryDependencies += ("com.sksamuel.elastic4s" %% "elastic4s-effect-cats" % esClientVersion)
-      .exclude("org.typelevel", "cats-effect-std_2.13")
-      .exclude("org.typelevel", "cats-effect_2.13")
-      .exclude("org.typelevel", "cats-kernel_2.13")
-      .exclude("org.typelevel", "cats-effect-kernel_2.13")
-      .exclude("org.typelevel", "cats-core_2.13")
-      .cross(CrossVersion.for3Use2_13),
-    libraryDependencies += ("com.sksamuel.elastic4s" % "elastic4s-client-esjava" % esClientVersion)
-      .cross(CrossVersion.for3Use2_13),
-    libraryDependencies += "org.gnieh" %% "fs2-data-csv" % fs2CsvVersion,
-    libraryDependencies += "co.fs2" %% "fs2-io" % fs2IoVersion,
-    libraryDependencies += "io.higherkindness" %% "droste-core" % drosteVersion,
-    libraryDependencies ++= Seq(
-      "io.circe" %% "circe-core",
-      "io.circe" %% "circe-generic",
-      "io.circe" %% "circe-parser"
-    ).map(_ % circeVersion)
+    commonSettings
   )
-  .settings(scalacOptions ++= Seq(
-    "-source:future",
-    "-Xmax-inlines", "120"
-  ))
-  .dependsOn(schema, tablefy)
+  .dependsOn(schema, tablefy, common)
 
 lazy val t6_1_spark = (project in file("tasks/t6_1_spark"))
   .settings(
@@ -92,6 +96,23 @@ lazy val t7_1 = (project in file("tasks/t7_1"))
     }
   ).enablePlugins(JavaServerAppPackaging)
 
+lazy val t11_1_spark = (project in file("tasks/t11_1/spark"))
+  .settings(
+    name := "t11_1_spark",
+    scalaVersion := "2.13.8",
+    Test / fork := false,
+    libraryDependencies += "org.apache.spark" %% "spark-core" % sparkVersion % "provided",
+    libraryDependencies += "org.apache.spark" %% "spark-sql" % sparkVersion % "provided",
+    libraryDependencies += "org.elasticsearch" %% "elasticsearch-spark-30" % "8.3.2" % Provided,
+  )
+
+lazy val t11_1 = (project in file("tasks/t11_1/console"))
+  .settings(
+    name := "t11_1",
+    commonSettings
+  )
+  .dependsOn(schema, tablefy, common)
+
 lazy val schema = (project in file("modules/schema"))
   .settings(
     libraryDependencies += "org.typelevel" %% "cats-core" % catsVersion,
@@ -106,3 +127,10 @@ lazy val tablefy = (project in file("modules/tablefy"))
     libraryDependencies += "org.typelevel" %% "cats-core" % catsVersion,
     libraryDependencies += "org.typelevel" %% "cats-effect" % catsEffectVersion,
   )
+
+lazy val common = (project in file("modules/common"))
+  .settings(
+    name := "common",
+    commonSettings
+  )
+  .dependsOn(schema % Provided, tablefy % Provided)
